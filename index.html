@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1.0,
+               user-scalable=no">
+
+<title>JumpBoom</title>
+
+<link rel="icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+<link rel="apple-touch-icon" href="icon.png">
+
+<style>
+
+/* =========================
+   BODY
+========================= */
+
+body{
+    margin:0;
+    overflow:hidden;
+    font-family:sans-serif;
+    background:#000;
+}
+
+canvas{
+    display:block;
+}
+
+
+/* =========================
+   LOGO POJOK KIRI ATAS
+========================= */
+
+#logos{
+    position:absolute;
+
+    top:15px;
+    left:15px;
+
+    display:flex;
+    align-items:center;
+
+    gap:6px;
+
+    z-index:50;
+
+    pointer-events:none;
+}
+
+.logo{
+    width:42px;
+    height:42px;
+
+    object-fit:contain;
+
+    border-radius:6px;
+
+    background:rgba(0,0,0,0.45);
+
+    padding:2px;
+
+    box-sizing:border-box;
+
+    box-shadow:
+        0 2px 6px rgba(0,0,0,0.6);
+}
+
+
+/* =========================
+   SCORE
+========================= */
+
+#score{
+    position:absolute;
+
+    top:20px;
+    left:50%;
+
+    transform:translateX(-50%);
+
+    font-size:35px;
+
+    color:white;
+
+    font-weight:bold;
+
+    z-index:20;
+
+    text-shadow:
+        2px 2px 5px #000;
+}
+
+
+/* =========================
+   LIVES
+========================= */
+
+#lives{
+    position:absolute;
+
+    top:25px;
+    right:20px;
+
+    display:flex;
+
+    gap:6px;
+
+    z-index:20;
+}
+
+.life{
+    width:22px;
+    height:22px;
+
+    object-fit:contain;
+}
+
+
+/* =========================
+   COUNTDOWN
+========================= */
+
+#countdown{
+    position:absolute;
+
+    top:50%;
+    left:50%;
+
+    transform:
+        translate(-50%,-50%);
+
+    font-size:80px;
+
+    color:white;
+
+    font-weight:bold;
+
+    z-index:30;
+
+    text-shadow:
+        3px 3px 8px #000;
+}
+
+
+/* =========================
+   RESTART
+========================= */
+
+#restart{
+    position:absolute;
+
+    bottom:40px;
+    left:50%;
+
+    transform:translateX(-50%);
+
+    padding:15px 30px;
+
+    font-size:20px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:#ffcc00;
+
+    font-weight:bold;
+
+    display:none;
+
+    z-index:40;
+
+    cursor:pointer;
+}
+
+
+/* =========================
+   PLAYER
+========================= */
+
+#bird{
+    position:absolute;
+
+    left:60px;
+
+    width:50px;
+
+    pointer-events:none;
+
+    z-index:10;
+}
+
+
+/* =========================
+   LEDAKAN
+========================= */
+
+#boom{
+    position:absolute;
+
+    width:120px;
+
+    display:none;
+
+    pointer-events:none;
+
+    z-index:25;
+}
+
+
+/* =========================
+   RESPONSIVE HP
+========================= */
+
+@media(max-width:600px){
+
+    #logos{
+        top:10px;
+        left:10px;
+
+        gap:4px;
+    }
+
+    .logo{
+        width:34px;
+        height:34px;
+    }
+
+    #score{
+        top:15px;
+        font-size:30px;
+    }
+
+    #lives{
+        top:18px;
+        right:10px;
+    }
+
+}
+
+</style>
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     4 LOGO DI POJOK KIRI ATAS
+========================= -->
+
+<div id="logos">
+
+    <img
+        class="logo"
+        src="1.jpg"
+        alt="RPL">
+
+    <img
+        class="logo"
+        src="2.jpg"
+        alt="MOKO">
+
+    <img
+        class="logo"
+        src="3.jpg"
+        alt="Sekolah">
+
+    <img
+        class="logo"
+        src="gg.jpg"
+        alt="Game">
+
+</div>
+
+
+<!-- =========================
+     SCORE
+========================= -->
+
+<div id="score">0</div>
+
+
+<!-- =========================
+     LIVES
+========================= -->
+
+<div id="lives"></div>
+
+
+<!-- =========================
+     COUNTDOWN
+========================= -->
+
+<div id="countdown">3</div>
+
+
+<!-- =========================
+     RESTART
+========================= -->
+
+<button id="restart">
+    Restart
+</button>
+
+
+<!-- =========================
+     PLAYER
+========================= -->
+
+<img
+    id="bird"
+    src="player.png"
+    alt="Player">
+
+
+<!-- =========================
+     EXPLOSION
+========================= -->
+
+<img
+    id="boom"
+    src="ledakan.gif"
+    alt="Boom">
+
+
+<!-- =========================
+     SOUND
+========================= -->
+
+<audio
+    id="boomSound"
+    src="audioLedakan.mp3"
+    preload="auto">
+</audio>
+
+<audio
+    id="jumpSound"
+    src="tiktik.mp3"
+    preload="auto">
+</audio>
+
+
+<!-- =========================
+     CANVAS
+========================= -->
+
+<canvas id="game"></canvas>
+
+
+<script>
+
+/* =========================
+   CANVAS
+========================= */
+
+const canvas =
+    document.getElementById("game");
+
+const ctx =
+    canvas.getContext("2d");
+
+
+/* =========================
+   ELEMENT
+========================= */
+
+const bird =
+    document.getElementById("bird");
+
+const boom =
+    document.getElementById("boom");
+
+const boomSound =
+    document.getElementById("boomSound");
+
+const jumpSound =
+    document.getElementById("jumpSound");
+
+const scoreElement =
+    document.getElementById("score");
+
+const countdownElement =
+    document.getElementById("countdown");
+
+const restartButton =
+    document.getElementById("restart");
+
+
+/* =========================
+   BACKGROUND
+========================= */
+
+const bgImg =
+    new Image();
+
+bgImg.src =
+    "latarBelakang.jpg";
+
+
+/* =========================
+   RESIZE
+========================= */
+
+function resize(){
+
+    canvas.width =
+        window.innerWidth;
+
+    canvas.height =
+        window.innerHeight;
+}
+
+resize();
+
+window.addEventListener(
+    "resize",
+    resize
+);
+
+
+/* =========================
+   PLAYER
+========================= */
+
+let birdY;
+
+let velocity;
+
+let gravity = 0.6;
+
+let jump = -10;
+
+let birdSize = 50;
+
+
+/* =========================
+   PIPE
+========================= */
+
+let pipes = [];
+
+let pipeWidth = 70;
+
+let gap = 200;
+
+
+/* =========================
+   GAME
+========================= */
+
+let score = 0;
+
+let lives = 3;
+
+let invincible = false;
+
+let gameOver = false;
+
+let gameStarted = false;
+
+
+/* =========================
+   LIVES
+========================= */
+
+function drawLives(){
+
+    const livesDiv =
+        document.getElementById("lives");
+
+    livesDiv.innerHTML = "";
+
+
+    for(
+        let i = 0;
+        i < lives;
+        i++
+    ){
+
+        let img =
+            document.createElement("img");
+
+        img.src =
+            "icon.png";
+
+        img.className =
+            "life";
+
+        livesDiv.appendChild(img);
+    }
+}
+
+
+/* =========================
+   COUNTDOWN
+========================= */
+
+function startCountdown(){
+
+    let count = 3;
+
+
+    countdownElement.style.display =
+        "block";
+
+    countdownElement.innerText =
+        count;
+
+
+    let timer =
+        setInterval(()=>{
+
+            count--;
+
+
+            if(count > 0){
+
+                countdownElement.innerText =
+                    count;
+            }
+
+
+            else if(count === 0){
+
+                countdownElement.innerText =
+                    "GO";
+            }
+
+
+            else{
+
+                clearInterval(timer);
+
+                countdownElement.style.display =
+                    "none";
+
+                gameStarted =
+                    true;
+            }
+
+        },1000);
+}
+
+
+/* =========================
+   RESET GAME
+========================= */
+
+function resetGame(){
+
+    birdY =
+        canvas.height / 2;
+
+    velocity = 0;
+
+    pipes = [];
+
+    score = 0;
+
+    lives = 3;
+
+    invincible = false;
+
+    gameOver = false;
+
+    gameStarted = false;
+
+
+    drawLives();
+
+
+    bird.style.display =
+        "block";
+
+
+    boom.style.display =
+        "none";
+
+
+    scoreElement.innerText =
+        "0";
+
+
+    restartButton.style.display =
+        "none";
+
+
+    startCountdown();
+}
+
+
+/* =========================
+   SPAWN PIPE
+========================= */
+
+function spawnPipe(){
+
+    let topHeight =
+        Math.random() *
+        (canvas.height - 400) + 50;
+
+
+    pipes.push({
+
+        x:canvas.width,
+
+        top:topHeight,
+
+        bottom:
+            topHeight + gap,
+
+        passed:false
+    });
+}
+
+
+/* =========================
+   PIPE TIMER
+========================= */
+
+setInterval(()=>{
+
+    if(
+        gameStarted &&
+        !gameOver
+    ){
+
+        spawnPipe();
+    }
+
+},2000);
+
+
+/* =========================
+   HIT
+========================= */
+
+function hit(){
+
+    if(
+        invincible ||
+        gameOver
+    ){
+
+        return;
+    }
+
+
+    invincible = true;
+
+
+    lives--;
+
+    drawLives();
+
+
+    bird.style.display =
+        "none";
+
+
+    boom.style.left =
+        "60px";
+
+
+    boom.style.top =
+        (birdY - birdSize / 2)
+        + "px";
+
+
+    boom.style.display =
+        "block";
+
+
+    boomSound.currentTime =
+        0;
+
+    boomSound
+        .play()
+        .catch(()=>{});
+
+
+    setTimeout(()=>{
+
+        boom.style.display =
+            "none";
+
+
+        if(lives <= 0){
+
+            endGame();
+        }
+
+        else{
+
+            bird.style.display =
+                "block";
+
+            birdY =
+                canvas.height / 2;
+
+            velocity = 0;
+        }
+
+
+        invincible = false;
+
+    },800);
+}
+
+
+/* =========================
+   GAME OVER
+========================= */
+
+function endGame(){
+
+    gameOver = true;
+
+    bird.style.display =
+        "none";
+
+    restartButton.style.display =
+        "block";
+}
+
+
+/* =========================
+   UPDATE
+========================= */
+
+function update(){
+
+    if(
+        !gameStarted ||
+        gameOver
+    ){
+
+        return;
+    }
+
+
+    velocity += gravity;
+
+    birdY += velocity;
+
+
+    /* Jatuh */
+
+    if(
+        birdY > canvas.height
+    ){
+
+        hit();
+    }
+
+
+    /* Pipes */
+
+    for(
+        let p of pipes
+    ){
+
+        p.x -= 4;
+
+
+        /* Score */
+
+        if(
+            !p.passed &&
+            p.x < 80
+        ){
+
+            score++;
+
+            scoreElement.innerText =
+                score;
+
+            p.passed = true;
+        }
+
+
+        /* Collision */
+
+        if(
+
+            80 + birdSize / 2 > p.x &&
+
+            80 - birdSize / 2 <
+                p.x + pipeWidth &&
+
+            (
+                birdY - birdSize / 2 <
+                    p.top ||
+
+                birdY + birdSize / 2 >
+                    p.bottom
+            )
+
+        ){
+
+            hit();
+        }
+    }
+
+
+    /* Hapus pipe lama */
+
+    pipes =
+        pipes.filter(
+            p =>
+                p.x + pipeWidth > 0
+        );
+}
+
+
+/* =========================
+   DRAW
+========================= */
+
+function draw(){
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    /* Background */
+
+    if(bgImg.complete){
+
+        ctx.drawImage(
+            bgImg,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+    }
+
+
+    /* Pipes */
+
+    for(
+        let p of pipes
+    ){
+
+        ctx.fillStyle =
+            "green";
+
+
+        ctx.fillRect(
+            p.x,
+            0,
+            pipeWidth,
+            p.top
+        );
+
+
+        ctx.fillRect(
+            p.x,
+            p.bottom,
+            pipeWidth,
+            canvas.height -
+            p.bottom
+        );
+    }
+
+
+    /* Player */
+
+    bird.style.top =
+        (
+            birdY -
+            birdSize / 2
+        ) + "px";
+
+
+    bird.style.width =
+        birdSize + "px";
+
+
+    /* Game Over */
+
+    if(gameOver){
+
+        ctx.fillStyle =
+            "rgba(0,0,0,0.5)";
+
+        ctx.fillRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+
+        ctx.fillStyle =
+            "white";
+
+        ctx.font =
+            "bold 50px sans-serif";
+
+        ctx.textAlign =
+            "center";
+
+
+        ctx.fillText(
+            "GAME OVER",
+            canvas.width / 2,
+            canvas.height / 2
+        );
+
+
+        ctx.textAlign =
+            "left";
+    }
+}
+
+
+/* =========================
+   GAME LOOP
+========================= */
+
+function loop(){
+
+    update();
+
+    draw();
+
+    requestAnimationFrame(
+        loop
+    );
+}
+
+loop();
+
+
+/* =========================
+   FLAP
+========================= */
+
+function flap(){
+
+    if(gameOver)
+        return;
+
+    if(!gameStarted)
+        return;
+
+    if(invincible)
+        return;
+
+
+    velocity =
+        jump;
+
+
+    jumpSound.pause();
+
+    jumpSound.currentTime =
+        0;
+
+
+    jumpSound
+        .play()
+        .catch(()=>{});
+}
+
+
+/* =========================
+   CLICK
+========================= */
+
+document.addEventListener(
+    "click",
+    function(e){
+
+        if(
+            e.target ===
+            restartButton
+        ){
+
+            return;
+        }
+
+        flap();
+    }
+);
+
+
+/* =========================
+   TOUCH
+========================= */
+
+document.addEventListener(
+    "touchstart",
+    function(e){
+
+        if(
+            e.target ===
+            restartButton
+        ){
+
+            return;
+        }
+
+        flap();
+
+    },
+    {
+        passive:true
+    }
+);
+
+
+/* =========================
+   SPACE
+========================= */
+
+document.addEventListener(
+    "keydown",
+    function(e){
+
+        if(
+            e.code === "Space"
+        ){
+
+            e.preventDefault();
+
+            flap();
+        }
+    }
+);
+
+
+/* =========================
+   RESTART
+========================= */
+
+restartButton.onclick =
+    function(){
+
+        resetGame();
+    };
+
+
+/* =========================
+   START GAME
+========================= */
+
+bgImg.onload =
+    function(){
+
+        resetGame();
+    };
+
+
+/* Kalau background gagal load */
+
+setTimeout(()=>{
+
+    if(
+        !gameStarted &&
+        !gameOver
+    ){
+
+        resetGame();
+    }
+
+},1000);
+
+</script>
+
+</body>
+</html>
